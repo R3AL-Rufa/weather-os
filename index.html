@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEATHER_OS // AKURE // HYBRID</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600&family=Inter:wght@300;400;600&display=swap');
+        
+        body {
+            background: #050505;
+            font-family: 'Inter', system-ui, sans-serif;
+            color: #e0f2fe;
+            overflow-x: hidden;
+        }
+        .mono { font-family: 'Fira Code', monospace; }
+        
+        .cyber-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(103, 232, 249, 0.2);
+            backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
+        }
+
+        .cyber-card:hover {
+            border-color: rgba(103, 232, 249, 0.5);
+            box-shadow: 0 0 20px rgba(103, 232, 249, 0.1);
+        }
+        
+        .rain-active {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid #3b82f6 !important;
+        }
+        
+        .alert-pulse {
+            animation: pulse-red 2s infinite;
+            border: 1px solid #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.4); }
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-10 min-h-screen bg-[#050505]">
+    <div class="max-w-7xl mx-auto space-y-8">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(6,182,212,0.2)]">⚡</div>
+                <div>
+                    <div class="text-3xl font-light tracking-tight">Italepo-Oda, <span class="font-semibold text-cyan-400">Akure</span></div>
+                    <div class="flex gap-3 items-center mt-1">
+                        <span class="text-xs text-cyan-500/60 mono uppercase tracking-widest">Ondo State // NG</span>
+                        <span id="last-sync" class="text-[10px] opacity-40 mono uppercase tracking-tighter"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="text-left md:text-right">
+                <div id="live-clock" class="text-4xl font-light mono tracking-tighter text-white uppercase">00:00:00 AM</div>
+                <div id="live-date" class="text-sm opacity-50 uppercase tracking-widest mt-1">-- --- ----</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Current Weather Main -->
+            <div class="lg:col-span-5 cyber-card rounded-[2rem] p-8 md:p-10 relative overflow-hidden">
+                <div class="relative z-10 flex justify-between">
+                    <div>
+                        <div id="condition-icon" class="text-8xl mb-6 filter drop-shadow-lg">--</div>
+                        <div id="temp-out" class="text-[7rem] font-extralight leading-none tracking-tighter">--°</div>
+                        <div id="cond-out" class="text-2xl font-light mt-4 text-white">Initializing Hybrid...</div>
+                        <div id="feels-like" class="text-cyan-400/80 mono text-sm mt-2"></div>
+                    </div>
+                    <div class="text-right space-y-8">
+                        <div>
+                            <div class="text-[10px] opacity-40 mono tracking-widest mb-1">PEAK / BASE</div>
+                            <div class="text-4xl font-light"><span id="high-temp">--</span>° <span class="text-slate-600">/</span> <span id="low-temp" class="text-slate-500">--</span>°</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] opacity-40 mono tracking-widest mb-1">SOLAR CYCLE</div>
+                            <div id="sun-info" class="text-sm mono text-cyan-200/70 leading-relaxed uppercase">--:--<br>--:--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid Metrics -->
+            <div class="lg:col-span-7 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="cyber-card rounded-3xl p-6 flex flex-col justify-between">
+                    <div class="text-cyan-500 text-[10px] mono tracking-widest">HUMIDITY</div>
+                    <div id="humidity" class="text-5xl font-light mt-4">--%</div>
+                </div>
+                <div class="cyber-card rounded-3xl p-6 flex flex-col justify-between">
+                    <div class="text-cyan-500 text-[10px] mono tracking-widest">WIND_SPD</div>
+                    <div id="wind" class="text-4xl font-light mt-4">-- <span class="text-sm opacity-40">km/h</span></div>
+                </div>
+                <div class="cyber-card rounded-3xl p-6 flex flex-col justify-between">
+                    <div class="text-cyan-500 text-[10px] mono tracking-widest">PRECIP</div>
+                    <div id="precip" class="text-4xl font-light mt-4">--</div>
+                </div>
+                <div class="cyber-card rounded-3xl p-6 flex flex-col justify-between">
+                    <div class="text-cyan-500 text-[10px] mono tracking-widest">UV_INDEX</div>
+                    <div id="uv" class="text-5xl font-light mt-4">--</div>
+                </div>
+            </div>
+
+            <!-- Alert Container -->
+            <div id="alert-container" class="lg:col-span-12 hidden"></div>
+
+            <!-- Hourly Timeline -->
+            <div class="lg:col-span-12 cyber-card rounded-[2rem] p-8">
+                <div class="flex items-center justify-between mb-8">
+                    <h3 class="text-sm font-semibold mono tracking-[0.3em] uppercase opacity-80 underline decoration-cyan-500 decoration-2 underline-offset-8">24-HOUR FORECAST</h3>
+                    <div class="flex gap-4 text-[10px] mono opacity-40">
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> CHANCE</span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-cyan-400"></span> VOLUME</span>
+                    </div>
+                </div>
+                <div id="hourly-container" class="flex overflow-x-auto gap-4 pb-4 snap-x"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const LAT = 7.1934;
+        const LON = 5.2310;
+        const OWM_KEY = "49e006af878d319eaaa59900424e6056";
+
+        function getWMO(code) {
+            const map = {
+                0: ["Clear Sky", "☀️"], 1: ["Mainly Clear", "🌤️"], 2: ["Partly Cloudy", "⛅"], 3: ["Overcast", "☁️"],
+                45: ["Foggy", "🌫️"], 48: ["Rime Fog", "🌫️"],
+                51: ["Light Drizzle", "🌦️"], 53: ["Moderate Drizzle", "🌦️"], 55: ["Heavy Drizzle", "🌧️"],
+                61: ["Slight Rain", "🌧️"], 63: ["Moderate Rain", "🌧️"], 65: ["Heavy Rain", "🌧️"],
+                80: ["Rain Showers", "🌦️"], 81: ["Heavy Showers", "🌧️"], 82: ["Violent Showers", "⛈️"],
+                95: ["Thunderstorm", "⛈️"], 96: ["Storm + Hail", "⛈️"], 99: ["Severe Storm", "⛈️"]
+            };
+            return map[code] || ["Cloudy", "☁️"];
+        }
+
+        async function fetchWeather() {
+            try {
+                // Parallel Fetch for accuracy and speed
+                const omUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,precipitation_probability,weather_code,precipitation,uv_index&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=Africa/Lagos`;
+                const owmUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${OWM_KEY}&units=metric`;
+
+                const [omRes, owmRes] = await Promise.all([fetch(omUrl), fetch(owmUrl)]);
+                const omData = await omRes.json();
+                const owmData = await owmRes.json();
+
+                // Weighted averaging for Current Conditions
+                // OWM (60%) for ground-level responsiveness, Open-Meteo (40%) for baseline
+                const currentTemp = (owmData.main.temp * 0.6) + (omData.current.temperature_2m * 0.4);
+                const currentFeels = (owmData.main.feels_like * 0.6) + (omData.current.apparent_temperature * 0.4);
+                const currentHumid = Math.round((owmData.main.humidity + omData.current.relative_humidity_2m) / 2);
+
+                const now = new Date();
+                const currentHourIndex = now.getHours();
+                const [desc, icon] = getWMO(omData.current.weather_code);
+
+                // Update UI
+                document.getElementById('condition-icon').textContent = icon;
+                document.getElementById('temp-out').textContent = Math.round(currentTemp) + "°";
+                document.getElementById('cond-out').textContent = desc;
+                document.getElementById('feels-like').textContent = `SENSATION: ${Math.round(currentFeels)}°C`;
+                document.getElementById('humidity').textContent = currentHumid + "%";
+                document.getElementById('wind').textContent = Math.round(omData.current.wind_speed_10m);
+                document.getElementById('precip').textContent = omData.current.precipitation > 0 ? omData.current.precipitation + "mm" : "DRY";
+                
+                const currentUV = omData.hourly.uv_index[currentHourIndex];
+                document.getElementById('uv').textContent = currentUV.toFixed(1);
+                
+                document.getElementById('high-temp').textContent = Math.round(omData.daily.temperature_2m_max[0]);
+                document.getElementById('low-temp').textContent = Math.round(omData.daily.temperature_2m_min[0]);
+                document.getElementById('last-sync').textContent = "HYBRID_OS_SYNC: " + new Date().toLocaleTimeString('en-US', { hour12: true });
+
+                document.getElementById('sun-info').innerHTML = `
+                    RISE: ${new Date(omData.daily.sunrise[0]).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true})}<br>
+                    SET: ${new Date(omData.daily.sunset[0]).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true})}
+                `;
+
+                // Alert Logic (Next 4 Hours)
+                const alertContainer = document.getElementById('alert-container');
+                const next4Hours = omData.hourly.weather_code.slice(currentHourIndex, currentHourIndex + 4);
+                const stormWarning = next4Hours.some(code => [95, 96, 99].includes(code));
+
+                if (stormWarning) {
+                    alertContainer.classList.remove('hidden');
+                    alertContainer.innerHTML = `
+                        <div class="alert-pulse p-6 rounded-3xl flex items-center gap-6">
+                            <div class="text-4xl">⛈️</div>
+                            <div>
+                                <div class="text-red-400 text-xs font-bold mono tracking-[0.2em]">STORM THREAT ALERT</div>
+                                <div class="text-xl font-medium text-white uppercase tracking-tight">Heavy Thunderstorms Forecasted for Akure</div>
+                            </div>
+                        </div>`;
+                } else {
+                    alertContainer.classList.add('hidden');
+                }
+
+                // Hourly Render
+                const container = document.getElementById('hourly-container');
+                container.innerHTML = '';
+                for (let i = 0; i < 24; i++) {
+                    const time = new Date(omData.hourly.time[i]);
+                    const prob = omData.hourly.precipitation_probability[i];
+                    const rainAmt = omData.hourly.precipitation[i];
+                    const [_, hIcon] = getWMO(omData.hourly.weather_code[i]);
+                    const isCurrentHour = i === currentHourIndex;
+                    
+                    const card = document.createElement('div');
+                    card.className = `min-w-[110px] cyber-card rounded-2xl p-5 text-center snap-start ${rainAmt > 0 ? 'rain-active' : ''} ${isCurrentHour ? 'ring-1 ring-cyan-400' : ''}`;
+                    card.innerHTML = `
+                        <div class="mono text-[10px] ${isCurrentHour ? 'text-cyan-400' : 'opacity-40'} mb-2">
+                            ${time.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })}
+                        </div>
+                        <div class="text-3xl my-2">${hIcon}</div>
+                        <div class="text-2xl font-light">${Math.round(omData.hourly.temperature_2m[i])}°</div>
+                        <div class="text-blue-400 text-[10px] font-bold mt-2">${prob}%</div>
+                        ${rainAmt > 0 ? `<div class="text-cyan-400 text-[9px] mt-1 mono">${rainAmt}mm</div>` : ''}
+                    `;
+                    container.appendChild(card);
+                    if(isCurrentHour) {
+                        setTimeout(() => card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }), 500);
+                    }
+                }
+            } catch (e) {
+                console.error("HYBRID SYNC FAILED:", e);
+                document.getElementById('cond-out').textContent = "OFFLINE_MODE";
+            }
+        }
+
+        function updateClock() {
+            const d = new Date();
+            document.getElementById('live-clock').textContent = d.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: true});
+            document.getElementById('live-date').textContent = d.toLocaleDateString('en-US', {weekday:'short', day:'numeric', month:'short', year:'numeric'});
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+        fetchWeather();
+        setInterval(fetchWeather, 600000); // Sync every 10 mins
+    </script>
+</body>
+</html>
